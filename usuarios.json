@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1744920612739,
+    "nome": "Sheila Professora",
+    "cpf": "00000000000",
+    "escola": "Escola Exemplo",
+    "funcao": "professor",
+    "email": "sheilacupira@gmail.com",
+    "senha": "$2b$10$6kbvUIPb/O2pLZ56372n.us9hidgyLndwGAJ1hP5HWGAXo5RDARq6"
+  },
+  {
+    "id": 1744928455005,
+    "nome": "Sheila 2",
+    "cpf": "0000000000",
+    "escola": "Tenciano ",
+    "funcao": "diretor",
+    "email": "Professor@email.com",
+    "senha": "$2b$10$u7.5m9iNaCo3Ze0aXJeyFuqQ2yOnuaERm.CGe/phqUwWtiK.33gB."
+  }
+]

@@ -1,0 +1,291 @@
+[
+  {
+    "turmaId": 1744399329437,
+    "aluno": "Sara",
+    "notas": [
+      8,
+      9,
+      7.5
+    ],
+    "provas": [
+      "Prova 1",
+      "Prova 2",
+      "Prova 3"
+    ]
+  },
+  {
+    "turmaId": 1744399329437,
+    "aluno": "Kauanny",
+    "notas": [
+      7,
+      8,
+      7
+    ],
+    "provas": [
+      "Prova 1",
+      "Prova 2",
+      "Prova 3"
+    ]
+  },
+  {
+    "turmaId": 1744399329437,
+    "aluno": "Lucas",
+    "notas": [
+      6,
+      6.5,
+      7
+    ],
+    "provas": [
+      "Prova 1",
+      "Prova 2",
+      "Prova 3"
+    ]
+  },
+  {
+    "turmaId": 1744393373838,
+    "aluno": "Leonardo",
+    "notas": [
+      8,
+      7.5,
+      9
+    ],
+    "provas": [
+      "Diagnóstica",
+      "Simulado",
+      "Prova Final"
+    ]
+  },
+  {
+    "aluno": "Laura",
+    "turmaId": 1744392975201,
+    "gabaritoId": 1744573314475,
+    "notaMaxima": 10,
+    "respostasAluno": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "A"
+    ]
+  },
+  {
+    "turmaId": 1744393373838,
+    "aluno": "Maria Eduarda",
+    "notas": [
+      7,
+      8,
+      8.5
+    ],
+    "provas": [
+      "Diagnóstica",
+      "Simulado",
+      "Prova Final"
+    ]
+  },
+  {
+    "turmaId": 1744392975201,
+    "aluno": "João",
+    "notas": [
+      6.5,
+      7,
+      7.5
+    ],
+    "provas": [
+      "1º Bimestre",
+      "2º Bimestre",
+      "3º Bimestre"
+    ]
+  },
+  {
+    "turmaId": 1744392975201,
+    "aluno": "Maria",
+    "notas": [
+      9,
+      9.5,
+      10
+    ],
+    "provas": [
+      "1º Bimestre",
+      "2º Bimestre",
+      "3º Bimestre"
+    ]
+  },
+  {
+    "turmaId": 1744392975201,
+    "aluno": "Pedro",
+    "notas": [
+      7,
+      7.5,
+      8
+    ],
+    "provas": [
+      "1º Bimestre",
+      "2º Bimestre",
+      "3º Bimestre"
+    ]
+  },
+  {
+    "aluno": "Sara",
+    "turmaId": 1744392975201,
+    "gabaritoId": 1744573314475,
+    "notaMaxima": 10,
+    "notaFinal": 8,
+    "acertos": 4,
+    "erros": 1,
+    "resultados": [
+      {
+        "questao": 1,
+        "correta": "A",
+        "resposta": "A",
+        "acertou": true
+      },
+      {
+        "questao": 2,
+        "correta": "B",
+        "resposta": "B",
+        "acertou": true
+      },
+      {
+        "questao": 3,
+        "correta": "C",
+        "resposta": "C",
+        "acertou": true
+      },
+      {
+        "questao": 4,
+        "correta": "D",
+        "resposta": "X",
+        "acertou": false
+      },
+      {
+        "questao": 5,
+        "correta": "A",
+        "resposta": "A",
+        "acertou": true
+      }
+    ]
+  },
+  {
+    "aluno": "Laura",
+    "turmaId": 1744392975201,
+    "gabaritoId": 1744573314475,
+    "notaMaxima": 10,
+    "notaFinal": 10,
+    "acertos": 5,
+    "erros": 0,
+    "resultados": [
+      {
+        "questao": 1,
+        "correta": "A",
+        "resposta": "A",
+        "acertou": true
+      },
+      {
+        "questao": 2,
+        "correta": "B",
+        "resposta": "B",
+        "acertou": true
+      },
+      {
+        "questao": 3,
+        "correta": "C",
+        "resposta": "C",
+        "acertou": true
+      },
+      {
+        "questao": 4,
+        "correta": "D",
+        "resposta": "D",
+        "acertou": true
+      },
+      {
+        "questao": 5,
+        "correta": "A",
+        "resposta": "A",
+        "acertou": true
+      }
+    ]
+  },
+  {
+    "aluno": "Laura",
+    "turmaId": 1744392975201,
+    "gabaritoId": 1744573314475,
+    "notaMaxima": 10,
+    "notaFinal": 10,
+    "acertos": 5,
+    "erros": 0,
+    "resultados": [
+      {
+        "questao": 1,
+        "correta": "A",
+        "resposta": "A",
+        "acertou": true
+      },
+      {
+        "questao": 2,
+        "correta": "B",
+        "resposta": "B",
+        "acertou": true
+      },
+      {
+        "questao": 3,
+        "correta": "C",
+        "resposta": "C",
+        "acertou": true
+      },
+      {
+        "questao": 4,
+        "correta": "D",
+        "resposta": "D",
+        "acertou": true
+      },
+      {
+        "questao": 5,
+        "correta": "A",
+        "resposta": "A",
+        "acertou": true
+      }
+    ]
+  },
+  {
+    "aluno": "Laura",
+    "turmaId": 1744392975201,
+    "gabaritoId": 1744573314475,
+    "notaMaxima": 10,
+    "notaFinal": 10,
+    "acertos": 5,
+    "erros": 0,
+    "resultados": [
+      {
+        "questao": 1,
+        "correta": "A",
+        "resposta": "A",
+        "acertou": true
+      },
+      {
+        "questao": 2,
+        "correta": "B",
+        "resposta": "B",
+        "acertou": true
+      },
+      {
+        "questao": 3,
+        "correta": "C",
+        "resposta": "C",
+        "acertou": true
+      },
+      {
+        "questao": 4,
+        "correta": "D",
+        "resposta": "D",
+        "acertou": true
+      },
+      {
+        "questao": 5,
+        "correta": "A",
+        "resposta": "A",
+        "acertou": true
+      }
+    ]
+  }
+]

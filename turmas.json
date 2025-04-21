@@ -1,0 +1,37 @@
+[
+  {
+    "id": 1744392975201,
+    "escola": "Escola Teste",
+    "serie": "7º ano",
+    "turma": "B",
+    "disciplina": "Português",
+    "alunos": [
+      "João",
+      "Maria",
+      "Pedro"
+    ]
+  },
+  {
+    "id": 1744393373838,
+    "escola": "Tenciano ",
+    "serie": "9 ano",
+    "turma": "Única ",
+    "disciplina": "Português ",
+    "alunos": [
+      "Leonardo ",
+      "Maria Eduarda "
+    ]
+  },
+  {
+    "id": 1744399329437,
+    "escola": "Tenciano ",
+    "serie": "8 ano ",
+    "turma": "A",
+    "disciplina": "Português ",
+    "alunos": [
+      "Kauanny ",
+      "Lucas",
+      "Sara"
+    ]
+  }
+]
