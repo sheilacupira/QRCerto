@@ -102,5 +102,21 @@ router.delete('/:id', (req, res) => {
   salvarTurmas(turmas);
   res.json({ mensagem: 'Turma excluída com sucesso' });
 });
+router.get('/:id/alunos', (req, res) => {
+  const { id } = req.params;
 
+  const turmas = lerTurmas();
+  const turma = turmas.find(t => t.id == id);
+
+  if (!turma) {
+    return res.status(404).json({ mensagem: 'Turma não encontrada' });
+  }
+
+  const alunos = turma.alunos.map((nome, index) => ({
+    id: index + 1, // ID fictício
+    nome,
+  }));
+
+  res.json(alunos);
+});
 module.exports = router;

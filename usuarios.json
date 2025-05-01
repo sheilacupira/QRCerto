@@ -1,13 +1,17 @@
 [
-  {
-    "id": 1744920612739,
-    "nome": "Sheila Professora",
-    "cpf": "00000000000",
-    "escola": "Escola Exemplo",
-    "funcao": "professor",
-    "email": "sheilacupira@gmail.com",
-    "senha": "$2b$10$6kbvUIPb/O2pLZ56372n.us9hidgyLndwGAJ1hP5HWGAXo5RDARq6"
-  },
+  [
+    {
+      "id": 1,
+      "nome": "Sheila",
+      "cpf": "12345678900",
+      "funcao": "professor",
+      "email": "sheilacupira@gmail.com",
+      "senha": "$2b$10$mYgyaELsbDc9RGbDhr53FOYj3tYHQ/6guopEv2eQ.2IpeZzMSZzYS",
+      "escola": "Escola Municipal QRCerto",
+      "escolas": ["Escola Municipal QRCerto"]
+    }
+  ],
+  
   {
     "id": 1744928455005,
     "nome": "Sheila 2",
