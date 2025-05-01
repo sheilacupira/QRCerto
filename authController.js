@@ -145,9 +145,23 @@ router.post('/esqueci-senha', async (req, res) => {
   const mailOptions = {
     from: process.env.EMAIL_REMETENTE,
     to: email,
-    subject: 'Redefinição de Senha - QRCerto',
-    text: `Olá! Aqui está seu código de redefinição de senha:\n\n${token}\n\nEste código é válido por 15 minutos.`,
+    subject: '🔐 Código de Redefinição de Senha - QRCerto',
+    text: `
+  Olá!
+  
+  Recebemos uma solicitação para redefinir a sua senha no aplicativo QRCerto.
+  
+  Aqui está seu código de verificação (válido por 15 minutos):
+  
+  🔑 CÓDIGO: ${token}
+  
+  Se você não solicitou essa redefinição, pode ignorar este e-mail.
+  
+  Atenciosamente,
+  Equipe QRCerto
+  `,
   };
+  
 
   try {
     await transporter.sendMail(mailOptions);
