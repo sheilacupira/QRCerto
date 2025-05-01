@@ -23,35 +23,55 @@ const salvarUsuarios = (usuarios) => {
 // ========== LOGIN ==========
 router.post('/login', async (req, res) => {
   const { email, senha } = req.body;
+  console.log('🔍 Tentando login com:', email, senha);
+
   const usuarios = lerUsuarios();
+  console.log('📁 Usuários carregados:', usuarios.length);
+
   const usuario = usuarios.find(u => u.email === email);
+  console.log('👤 Usuário encontrado:', usuario);
 
-  if (!usuario) return res.status(401).json({ mensagem: 'E-mail ou senha inválidos!' });
+  if (!usuario) {
+    console.log('❌ Nenhum usuário encontrado com esse e-mail');
+    return res.status(401).json({ mensagem: 'E-mail ou senha inválidos!' });
+  }
 
-  const senhaCorreta = await bcrypt.compare(senha, usuario.senha);
-  if (!senhaCorreta) return res.status(401).json({ mensagem: 'E-mail ou senha inválidos!' });
+  try {
+    const senhaCorreta = await bcrypt.compare(senha, usuario.senha);
+    console.log('🔐 Resultado da comparação de senha:', senhaCorreta);
 
-  const escolas = Array.isArray(usuario.escolas)
-    ? usuario.escolas
-    : usuario.escola
-      ? [usuario.escola]
-      : [];
-
-  const token = jwt.sign(
-    { id: usuario.id, nome: usuario.nome, funcao: usuario.funcao, escolas },
-    SECRET,
-    { expiresIn: '1d' }
-  );
-
-  res.json({
-    token,
-    usuario: {
-      nome: usuario.nome,
-      funcao: usuario.funcao,
-      email: usuario.email,
-      escolas
+    if (!senhaCorreta) {
+      console.log('❌ Senha incorreta');
+      return res.status(401).json({ mensagem: 'E-mail ou senha inválidos!' });
     }
-  });
+
+    const escolas = Array.isArray(usuario.escolas)
+      ? usuario.escolas
+      : usuario.escola
+        ? [usuario.escola]
+        : [];
+
+    const token = jwt.sign(
+      { id: usuario.id, nome: usuario.nome, funcao: usuario.funcao, escolas },
+      SECRET,
+      { expiresIn: '1d' }
+    );
+
+    console.log('✅ Login bem-sucedido');
+
+    res.json({
+      token,
+      usuario: {
+        nome: usuario.nome,
+        funcao: usuario.funcao,
+        email: usuario.email,
+        escolas
+      }
+    });
+  } catch (erro) {
+    console.error('💥 Erro durante a comparação de senha:', erro);
+    return res.status(500).json({ mensagem: 'Erro interno ao tentar logar.' });
+  }
 });
 
 // ========== REGISTRO ==========
@@ -147,21 +167,20 @@ router.post('/esqueci-senha', async (req, res) => {
     to: email,
     subject: '🔐 Código de Redefinição de Senha - QRCerto',
     text: `
-  Olá!
-  
-  Recebemos uma solicitação para redefinir a sua senha no aplicativo QRCerto.
-  
-  Aqui está seu código de verificação (válido por 15 minutos):
-  
-  🔑 CÓDIGO: ${token}
-  
-  Se você não solicitou essa redefinição, pode ignorar este e-mail.
-  
-  Atenciosamente,
-  Equipe QRCerto
-  `,
+Olá!
+
+Recebemos uma solicitação para redefinir sua senha no aplicativo QRCerto.
+
+Aqui está seu código de verificação (válido por 15 minutos):
+
+🔑 CÓDIGO: ${token}
+
+Se você não solicitou essa redefinição, pode ignorar este e-mail.
+
+Atenciosamente,
+Equipe QRCerto
+`,
   };
-  
 
   try {
     await transporter.sendMail(mailOptions);
