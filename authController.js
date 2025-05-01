@@ -219,5 +219,10 @@ router.post('/resetar-senha', async (req, res) => {
     res.status(400).json({ mensagem: 'Token inválido ou expirado.' });
   }
 });
+// ROTA TEMPORÁRIA DE TESTE
+router.get('/testar-usuarios', (req, res) => {
+  const usuarios = lerUsuarios();
+  res.json(usuarios);
+});
 
 module.exports = router;
