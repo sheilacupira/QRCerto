@@ -1,4 +1,6 @@
 // ========== ESQUECI SENHA ==========
+const router = express.Router();
+
 router.post('/esqueci-senha', async (req, res) => {
   const { email } = req.body;
 
