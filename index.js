@@ -26,6 +26,8 @@ app.use('/api/gabarito',      require('./gabaritoController.js'));
 app.use('/api/correcao',      require('./correcaoController.js'));
 app.use('/api/escolas',       require('./escolasController.js')); // deve vir antes do 404
 
+
+
 // ─── Arquivos estáticos ────────────────────────
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
