@@ -1,6 +1,3 @@
-// Força novo deploy
-
-// index.js
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -10,7 +7,6 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ─── Middlewares ───────────────────────────────
 app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
@@ -19,16 +15,15 @@ app.use(morgan('dev'));
 app.get('/', (_req, res) => res.send('Servidor do QRCerto está no ar! 🚀'));
 
 // ─── Rotas da API ──────────────────────────────
-app.use('/auth',              require('./authController.js'));
+console.log('✅ Iniciando rotas principais...');
+app.use('/auth', require('./authController.js'));
 app.use('/api/turmas',        require('./turmaController.js'));
 app.use('/api/notas',         require('./notasController.js'));
 app.use('/api/importar-xlsx', require('./importarXlsxController.js'));
 app.use('/api/qrcode',        require('./qrCodeController.js'));
 app.use('/api/gabarito',      require('./gabaritoController.js'));
 app.use('/api/correcao',      require('./correcaoController.js'));
-app.use('/api/escolas',       require('./escolasController.js')); // deve vir antes do 404
-
-
+app.use('/api/escolas',       require('./escolasController.js'));
 
 // ─── Arquivos estáticos ────────────────────────
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

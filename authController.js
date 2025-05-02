@@ -7,7 +7,8 @@ const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 require('dotenv').config();
 
-const usuariosPath = path.join(__dirname, 'usuarios.json');
+// Forçado: altere o nome do arquivo para garantir leitura no Render
+const usuariosPath = path.join(__dirname, 'dadosUsuarios.json');
 const SECRET = 'chave-secreta-do-token';
 
 // ========== UTILITÁRIOS ==========
@@ -166,20 +167,7 @@ router.post('/esqueci-senha', async (req, res) => {
     from: process.env.EMAIL_REMETENTE,
     to: email,
     subject: '🔐 Código de Redefinição de Senha - QRCerto',
-    text: `
-Olá!
-
-Recebemos uma solicitação para redefinir sua senha no aplicativo QRCerto.
-
-Aqui está seu código de verificação (válido por 15 minutos):
-
-🔑 CÓDIGO: ${token}
-
-Se você não solicitou essa redefinição, pode ignorar este e-mail.
-
-Atenciosamente,
-Equipe QRCerto
-`,
+    text: `Olá!\n\nRecebemos uma solicitação para redefinir sua senha no aplicativo QRCerto.\n\n🔑 CÓDIGO: ${token}\n\nSe você não solicitou essa redefinição, pode ignorar este e-mail.\n\nAtenciosamente,\nEquipe QRCerto`,
   };
 
   try {
@@ -219,12 +207,13 @@ router.post('/resetar-senha', async (req, res) => {
     res.status(400).json({ mensagem: 'Token inválido ou expirado.' });
   }
 });
-// ROTA TEMPORÁRIA DE TESTE
+
+// ========== ROTA DE TESTE ==========
 router.get('/testar-usuarios', (req, res) => {
+  console.log('🚨 [TESTE] Rota /auth/testar-usuarios foi chamada com sucesso!');
   const usuarios = lerUsuarios();
   res.json(usuarios);
 });
+
 console.log('✅ authController foi carregado com sucesso!');
-
-
 module.exports = router;
