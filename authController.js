@@ -224,5 +224,7 @@ router.get('/testar-usuarios', (req, res) => {
   const usuarios = lerUsuarios();
   res.json(usuarios);
 });
+console.log('✅ authController foi carregado com sucesso!');
+
 
 module.exports = router;
