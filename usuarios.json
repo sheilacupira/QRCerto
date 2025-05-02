@@ -1,15 +1,23 @@
 
 [
   {
-    "id": 1746132669234,
+    "id": 1,
     "nome": "Sheila",
     "cpf": "12345678900",
     "funcao": "professor",
     "email": "sheilacupira@gmail.com",
-    "senha": "$2b$10$nZrpWqbCaEn7bowiIEZEMeSvtAx./ZwL84fieEleN.j/jmzLQaYVa",
+    "senha": "$2b$10$m9gyaELsbDc9RGbDhn53FOYj3tYHQ/6guopEv2eQ.2IPezMSZzYS",
     "escola": "Escola Municipal QRCerto",
-    "escolas": [
-      "Escola Municipal QRCerto"
-    ]
+    "escolas": ["Escola Municipal QRCerto"]
+  },
+  {
+    "id": 2,
+    "nome": "Sheila 2",
+    "cpf": "00000000000",
+    "funcao": "diretor",
+    "email": "professor@email.com",
+    "senha": "$2b$10$u7.5m9iNaCo3Ze0aXJeyFuqQ2yOnuaERm.CGe/phqUWtkiK.33gB.",
+    "escola": "Tenciano",
+    "escolas": ["Tenciano"]
   }
 ]
