@@ -4,14 +4,12 @@ const fs = require('fs');
 const path = require('path');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const nodemailer = require('nodemailer');
+
 require('dotenv').config();
 
-// Forçado: altere o nome do arquivo para garantir leitura no Render
-const usuariosPath = path.join(__dirname, 'dadosUsuarios.json');
-const SECRET = 'chave-secreta-do-token';
+const usuariosPath = path.join(__dirname, 'usuarios.json');
+const SECRET = process.env.JWT_SECRET || 'chave-padrao';
 
-// ========== UTILITÁRIOS ==========
 const lerUsuarios = () => {
   if (!fs.existsSync(usuariosPath)) return [];
   return JSON.parse(fs.readFileSync(usuariosPath, 'utf8'));
@@ -23,63 +21,50 @@ const salvarUsuarios = (usuarios) => {
 
 // ========== LOGIN ==========
 router.post('/login', async (req, res) => {
-  const { email, senha } = req.body;
-  console.log('🔍 Tentando login com:', email, senha);
+  console.log('---- LOGIN DEBUG ----');
+  console.log('REQ.BODY →', req.body);
 
+  const { email, senha } = req.body;
   const usuarios = lerUsuarios();
-  console.log('📁 Usuários carregados:', usuarios.length);
+  console.log('USUÁRIOS →', usuarios);
 
   const usuario = usuarios.find(u => u.email === email);
-  console.log('👤 Usuário encontrado:', usuario);
+  console.log('ENCONTRADO →', usuario);
 
   if (!usuario) {
-    console.log('❌ Nenhum usuário encontrado com esse e-mail');
-    return res.status(401).json({ mensagem: 'E-mail ou senha inválidos!' });
+    return res.status(401).json({ mensagem: 'E-mail ou senha inválidos 1!' });
   }
 
-  try {
-    const senhaCorreta = await bcrypt.compare(senha, usuario.senha);
-    console.log('🔐 Resultado da comparação de senha:', senhaCorreta);
+  const senhaCorreta = await bcrypt.compare(senha, usuario.senha);
+  console.log('HASH ARMAZENADO →', usuario.senha);
+  console.log('COMPARE(senha, hash) →', senhaCorreta);
 
-    if (!senhaCorreta) {
-      console.log('❌ Senha incorreta');
-      return res.status(401).json({ mensagem: 'E-mail ou senha inválidos!' });
+  if (!senhaCorreta) {
+    return res.status(401).json({ mensagem: 'E-mail ou senha inválidos 2!' });
+  }
+
+  const token = jwt.sign(
+    { id: usuario.id, nome: usuario.nome, funcao: usuario.funcao },
+    SECRET,
+    { expiresIn: '1d' }
+  );
+
+  console.log('TOKEN GERADO →', token);
+  res.json({
+    token,
+    usuario: {
+      nome: usuario.nome,
+      funcao: usuario.funcao,
+      email: usuario.email,
     }
-
-    const escolas = Array.isArray(usuario.escolas)
-      ? usuario.escolas
-      : usuario.escola
-        ? [usuario.escola]
-        : [];
-
-    const token = jwt.sign(
-      { id: usuario.id, nome: usuario.nome, funcao: usuario.funcao, escolas },
-      SECRET,
-      { expiresIn: '1d' }
-    );
-
-    console.log('✅ Login bem-sucedido');
-
-    res.json({
-      token,
-      usuario: {
-        nome: usuario.nome,
-        funcao: usuario.funcao,
-        email: usuario.email,
-        escolas
-      }
-    });
-  } catch (erro) {
-    console.error('💥 Erro durante a comparação de senha:', erro);
-    return res.status(500).json({ mensagem: 'Erro interno ao tentar logar.' });
-  }
+  });
 });
 
 // ========== REGISTRO ==========
 router.post('/registro', async (req, res) => {
-  const { nome, cpf, escola, funcao, email, senha } = req.body;
-  if (!nome || !cpf || !escola || !funcao || !email || !senha) {
-    return res.status(400).json({ mensagem: 'Preencha todos os campos!' });
+  const { nome, email, senha, funcao } = req.body;
+  if (!nome || !email || !senha || !funcao) {
+    return res.status(400).json({ mensagem: 'Todos os campos são obrigatórios!' });
   }
 
   const usuarios = lerUsuarios();
@@ -90,130 +75,25 @@ router.post('/registro', async (req, res) => {
   const novoUsuario = {
     id: Date.now(),
     nome,
-    cpf,
-    funcao,
     email,
-    senha: await bcrypt.hash(senha, 10),
-    escola,
-    escolas: [escola]
+    funcao,
+    senha: await bcrypt.hash(senha, 10)
   };
 
   usuarios.push(novoUsuario);
   salvarUsuarios(usuarios);
-
-  res.status(201).json({ mensagem: 'Usuário cadastrado com sucesso!' });
-});
-
-// ========== LISTAR ESCOLAS ==========
-router.get('/escolas', (req, res) => {
-  const usuarios = lerUsuarios();
-  const todas = new Set();
-  usuarios.forEach(u => {
-    if (Array.isArray(u.escolas)) {
-      u.escolas.forEach(e => todas.add(e));
-    } else if (u.escola) {
-      todas.add(u.escola);
-    }
-  });
-  res.json(Array.from(todas));
-});
-
-// ========== ATUALIZAR ESCOLAS ==========
-router.put('/escolas', (req, res) => {
-  const { email, escolas } = req.body;
-  if (!email || !Array.isArray(escolas)) {
-    return res.status(400).json({ mensagem: 'Email e lista de escolas são obrigatórios!' });
-  }
-
-  const usuarios = lerUsuarios();
-  const usuario = usuarios.find(u => u.email === email);
-  if (!usuario) {
-    return res.status(404).json({ mensagem: 'Usuário não encontrado!' });
-  }
-
-  usuario.escolas = escolas;
-  usuario.escola = escolas[0] || '';
-
-  salvarUsuarios(usuarios);
-  res.json({ mensagem: 'Escolas atualizadas com sucesso!', escolas: usuario.escolas });
-});
-
-// ========== ESQUECI SENHA ==========
-router.post('/esqueci-senha', async (req, res) => {
-  const { email } = req.body;
-
-  if (!email) {
-    return res.status(400).json({ mensagem: 'O e-mail é obrigatório!' });
-  }
-
-  const usuarios = lerUsuarios();
-  const usuario = usuarios.find(u => u.email === email);
-
-  if (!usuario) {
-    return res.status(404).json({ mensagem: 'Usuário não encontrado.' });
-  }
-
-  const token = jwt.sign({ email }, SECRET, { expiresIn: '15m' });
-
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_REMETENTE,
-      pass: process.env.EMAIL_SENHA,
-    },
-  });
-
-  const mailOptions = {
-    from: process.env.EMAIL_REMETENTE,
-    to: email,
-    subject: '🔐 Código de Redefinição de Senha - QRCerto',
-    text: `Olá!\n\nRecebemos uma solicitação para redefinir sua senha no aplicativo QRCerto.\n\n🔑 CÓDIGO: ${token}\n\nSe você não solicitou essa redefinição, pode ignorar este e-mail.\n\nAtenciosamente,\nEquipe QRCerto`,
-  };
-
-  try {
-    await transporter.sendMail(mailOptions);
-    res.json({ mensagem: 'Código enviado para seu e-mail com sucesso!' });
-  } catch (error) {
-    console.error('Erro ao enviar e-mail:', error);
-    res.status(500).json({ mensagem: 'Erro ao enviar o e-mail.' });
-  }
-});
-
-// ========== RESETAR SENHA ==========
-router.post('/resetar-senha', async (req, res) => {
-  const { token, novaSenha } = req.body;
-
-  if (!token || !novaSenha) {
-    return res.status(400).json({ mensagem: 'Token e nova senha são obrigatórios!' });
-  }
-
-  try {
-    const decoded = jwt.verify(token, SECRET);
-    const email = decoded.email;
-
-    const usuarios = lerUsuarios();
-    const usuario = usuarios.find(u => u.email === email);
-
-    if (!usuario) {
-      return res.status(404).json({ mensagem: 'Usuário não encontrado!' });
-    }
-
-    usuario.senha = await bcrypt.hash(novaSenha, 10);
-    salvarUsuarios(usuarios);
-
-    res.json({ mensagem: 'Senha redefinida com sucesso!' });
-  } catch (err) {
-    console.error('Erro ao verificar token:', err);
-    res.status(400).json({ mensagem: 'Token inválido ou expirado.' });
-  }
+  res.status(201).json({ mensagem: 'Usuário registrado com sucesso!' });
 });
 
 // ========== ROTA DE TESTE ==========
-router.get('/testar-usuarios', (req, res) => {
-  console.log('🚨 [TESTE] Rota /auth/testar-usuarios foi chamada com sucesso!');
-  const usuarios = lerUsuarios();
+router.get('/testar-usuarios', (_req, res) => {
+  const usuarios = lerUsuarios().map(u => ({
+    id: u.id,
+    nome: u.nome,
+    email: u.email,
+    funcao: u.funcao
+  }));
   res.json(usuarios);
 });
 
-console.log('✅ authController foi carregado com sucesso!');
 module.exports = router;

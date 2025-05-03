@@ -1,15 +1,10 @@
 
 [
   {
-    "id": 1746132669234,
+    "id": 1,
     "nome": "Sheila",
-    "cpf": "12345678900",
-    "funcao": "professor",
     "email": "sheilacupira@gmail.com",
-    "senha": "$2b$10$nZrpWqbCaEn7bowiIEZEMeSvtAx./ZwL84fieEleN.j/jmzLQaYVa",
-    "escola": "Escola Municipal QRCerto",
-    "escolas": [
-      "Escola Municipal QRCerto"
-    ]
+    "funcao": "professor",
+    "senha": "$2b$10$nZrpWqbCaEn7bowiIEZEMeSvtAx./ZwL84fieEleN.j/jmzLQaYVa"
   }
 ]
