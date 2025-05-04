@@ -1,3 +1,4 @@
+// turmaController.js
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -5,118 +6,94 @@ const router = express.Router();
 
 const caminhoTurmas = path.join(__dirname, 'turmas.json');
 
-// Função auxiliar para ler as turmas
 function lerTurmas() {
   if (!fs.existsSync(caminhoTurmas)) return [];
-  const data = fs.readFileSync(caminhoTurmas);
-  return JSON.parse(data);
+  return JSON.parse(fs.readFileSync(caminhoTurmas, 'utf8'));
 }
 
-// Função auxiliar para salvar turmas
 function salvarTurmas(turmas) {
-  fs.writeFileSync(caminhoTurmas, JSON.stringify(turmas, null, 2));
+  fs.writeFileSync(caminhoTurmas, JSON.stringify(turmas, null, 2), 'utf8');
 }
 
-// ✅ GET /api/turmas - Listar todas as turmas
+// GET /api/turmas - Lista todas as turmas
 router.get('/', (req, res) => {
   try {
     const turmas = lerTurmas();
     res.json(turmas);
   } catch (err) {
-    console.error('Erro ao ler as turmas:', err);
+    console.error('Erro ao ler turmas:', err);
     res.status(500).json({ mensagem: 'Erro ao ler as turmas.' });
   }
 });
 
-// ✅ POST /api/turmas - Cadastrar nova turma
+// POST /api/turmas - Cadastra nova turma
 router.post('/', (req, res) => {
+  const { escola, serie, municipio, disciplina, professorEmail, alunos } = req.body;
+  if (!escola || !serie || !municipio || !disciplina || !professorEmail || !Array.isArray(alunos) || alunos.length === 0) {
+    return res.status(400).json({ mensagem: 'Dados incompletos.' });
+  }
   try {
-    
-
-    const { escola, serie, municipio, disciplina, professorEmail, alunos } = req.body;
-    console.log('🔍 Dados recebidos para cadastro:', req.body);
-    
-    if (!escola || !serie || !municipio || !disciplina || !professorEmail || !alunos || alunos.length === 0) {
-      return res.status(400).json({ mensagem: 'Dados incompletos' });
-    }
-
     const turmas = lerTurmas();
-
-    const novaTurma = {
-      id: Date.now(),
-      escola,
-      serie,
-      municipio,
-      disciplina,
-      professorEmail,
-      alunos,
-    };
-
+    const novaTurma = { id: Date.now(), escola, serie, municipio, disciplina, professorEmail, alunos };
     turmas.push(novaTurma);
     salvarTurmas(turmas);
-
     res.status(201).json({ mensagem: 'Turma salva com sucesso!', turma: novaTurma });
-  } catch (error) {
-    console.error('Erro no POST /api/turmas:', error);
+  } catch (err) {
+    console.error('Erro ao salvar turma:', err);
     res.status(500).json({ mensagem: 'Erro ao salvar turma.' });
   }
 });
 
-// 🔄 PUT /api/turmas/:id - Atualizar turma
+// PUT /api/turmas/:id - Atualiza turma existente
 router.put('/:id', (req, res) => {
   const { id } = req.params;
   const { escola, serie, municipio, disciplina, professorEmail, alunos } = req.body;
-
-  const turmas = lerTurmas();
-  const index = turmas.findIndex(t => t.id === parseInt(id));
-
-  if (index === -1) {
-    return res.status(404).json({ mensagem: 'Turma não encontrada' });
+  if (!escola || !serie || !municipio || !disciplina || !professorEmail || !Array.isArray(alunos) || alunos.length === 0) {
+    return res.status(400).json({ mensagem: 'Dados incompletos.' });
   }
-
-  turmas[index] = {
-    id: parseInt(id),
-    escola,
-    serie,
-    municipio,
-    disciplina,
-    professorEmail,
-    alunos,
-  };
-
-  salvarTurmas(turmas);
-  res.json({ mensagem: 'Turma atualizada com sucesso', turma: turmas[index] });
+  try {
+    const turmas = lerTurmas();
+    const idx = turmas.findIndex(t => t.id === parseInt(id, 10));
+    if (idx === -1) return res.status(404).json({ mensagem: 'Turma não encontrada.' });
+    turmas[idx] = { id: parseInt(id, 10), escola, serie, municipio, disciplina, professorEmail, alunos };
+    salvarTurmas(turmas);
+    res.json({ mensagem: 'Turma atualizada com sucesso!', turma: turmas[idx] });
+  } catch (err) {
+    console.error('Erro ao atualizar turma:', err);
+    res.status(500).json({ mensagem: 'Erro ao atualizar turma.' });
+  }
 });
 
-// ❌ DELETE /api/turmas/:id - Excluir turma
+// DELETE /api/turmas/:id - Remove turma
 router.delete('/:id', (req, res) => {
   const { id } = req.params;
-  let turmas = lerTurmas();
-
-  const index = turmas.findIndex(t => t.id === parseInt(id));
-  if (index === -1) {
-    return res.status(404).json({ mensagem: 'Turma não encontrada' });
+  try {
+    const turmas = lerTurmas();
+    const newTurmas = turmas.filter(t => t.id !== parseInt(id, 10));
+    if (newTurmas.length === turmas.length) {
+      return res.status(404).json({ mensagem: 'Turma não encontrada.' });
+    }
+    salvarTurmas(newTurmas);
+    res.json({ mensagem: 'Turma excluída com sucesso.' });
+  } catch (err) {
+    console.error('Erro ao excluir turma:', err);
+    res.status(500).json({ mensagem: 'Erro ao excluir turma.' });
   }
-
-  turmas.splice(index, 1);
-  salvarTurmas(turmas);
-  res.json({ mensagem: 'Turma excluída com sucesso' });
 });
+
+// GET /api/turmas/:id/alunos - Lista alunos de uma turma
 router.get('/:id/alunos', (req, res) => {
   const { id } = req.params;
-
-  const turmas = lerTurmas();
-  const turma = turmas.find(t => t.id == id);
-
-  if (!turma) {
-    return res.status(404).json({ mensagem: 'Turma não encontrada' });
+  try {
+    const turmas = lerTurmas();
+    const turma = turmas.find(t => t.id === parseInt(id, 10));
+    if (!turma) return res.status(404).json({ mensagem: 'Turma não encontrada.' });
+    const alunosList = turma.alunos.map((nome, idx) => ({ id: idx + 1, nome }));
+    res.json(alunosList);
+  } catch (err) {
+    console.error('Erro ao listar alunos:', err);
+    res.status(500).json({ mensagem: 'Erro ao listar alunos.' });
   }
-
-  const alunos = turma.alunos.map((nome, index) => ({
-    id: index + 1, // ID fictício
-    nome,
-  }));
-
-  res.json(alunos);
 });
+
 module.exports = router;
