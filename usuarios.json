@@ -1,10 +1,9 @@
-
 [
   {
     "id": 1,
     "nome": "Sheila",
     "email": "sheilacupira@gmail.com",
     "funcao": "professor",
-    "senha": "$2b$10$nZrpWqbCaEn7bowiIEZEMeSvtAx./ZwL84fieEleN.j/jmzLQaYVa"
+    "senha": "$2b$10$HzMKHaoMVpIlC43qaL9EiOWbTnQKLH5bzcNd4cD2iApmiJNcmslY2"
   }
 ]

@@ -1,130 +1,126 @@
+// authController.js
 const express = require('express');
-const router = express.Router();
-const fs = require('fs');
-const path = require('path');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
+const fs      = require('fs');
+const path    = require('path');
+const bcrypt  = require('bcrypt');
+const jwt     = require('jsonwebtoken');
+
 require('dotenv').config();
 
-const usuariosPath = path.join(__dirname, 'usuarios.json');
-const SECRET = process.env.JWT_SECRET || 'chave-padrao';
-const TOKEN_EXPIRATION = '1d';
-const RECOVERY_EXPIRATION_MS = 60 * 60 * 1000; // 1 hora
+const usuariosPath    = path.join(__dirname, 'usuarios.json');
+const tokensPath      = path.join(__dirname, 'resetTokens.json');
+const SECRET          = process.env.JWT_SECRET || 'chave-padrao';
 
+// --- Helpers para usuários ---
 function lerUsuarios() {
   if (!fs.existsSync(usuariosPath)) return [];
   return JSON.parse(fs.readFileSync(usuariosPath, 'utf8'));
 }
-
 function salvarUsuarios(usuarios) {
   fs.writeFileSync(usuariosPath, JSON.stringify(usuarios, null, 2), 'utf8');
 }
 
-// Middleware de autenticação
-const authMiddleware = (req, res, next) => {
-  const header = req.headers.authorization;
-  if (!header || !header.startsWith('Bearer ')) {
-    return res.status(401).json({ mensagem: 'Token não fornecido!' });
-  }
-  const token = header.split(' ')[1];
-  try {
-    const payload = jwt.verify(token, SECRET);
-    req.user = payload;
-    next();
-  } catch {
-    return res.status(401).json({ mensagem: 'Token inválido ou expirado!' });
-  }
-};
+// --- Helpers para reset tokens ---
+function lerTokens() {
+  if (!fs.existsSync(tokensPath)) return {};
+  return JSON.parse(fs.readFileSync(tokensPath, 'utf8'));
+}
+function salvarTokens(tokens) {
+  fs.writeFileSync(tokensPath, JSON.stringify(tokens, null, 2), 'utf8');
+}
 
-// LOGIN
+// ========== LOGIN ==========
+router = express.Router();
 router.post('/login', async (req, res) => {
   const { email, senha } = req.body;
-  if (!email || !senha) return res.status(400).json({ mensagem: 'E-mail e senha são obrigatórios!' });
   const usuarios = lerUsuarios();
   const usuario = usuarios.find(u => u.email === email);
   if (!usuario) return res.status(401).json({ mensagem: 'E-mail ou senha inválidos!' });
-  const senhaCorreta = await bcrypt.compare(senha, usuario.senha);
-  if (!senhaCorreta) return res.status(401).json({ mensagem: 'E-mail ou senha inválidos!' });
+
+  const ok = await bcrypt.compare(senha, usuario.senha);
+  if (!ok) return res.status(401).json({ mensagem: 'E-mail ou senha inválidos!' });
+
   const token = jwt.sign(
     { id: usuario.id, nome: usuario.nome, funcao: usuario.funcao },
     SECRET,
-    { expiresIn: TOKEN_EXPIRATION }
+    { expiresIn: '1d' }
   );
-  res.json({ token, usuario: { id: usuario.id, nome: usuario.nome, funcao: usuario.funcao, email: usuario.email } });
+  res.json({
+    token,
+    usuario: { id: usuario.id, nome: usuario.nome, email: usuario.email, funcao: usuario.funcao }
+  });
 });
 
-// REGISTRO
+// ========== REGISTRO ==========
 router.post('/registro', async (req, res) => {
   const { nome, email, senha, funcao } = req.body;
   if (!nome || !email || !senha || !funcao) {
     return res.status(400).json({ mensagem: 'Todos os campos são obrigatórios!' });
   }
   const usuarios = lerUsuarios();
-  if (usuarios.some(u => u.email === email)) {
+  if (usuarios.find(u => u.email === email)) {
     return res.status(409).json({ mensagem: 'E-mail já cadastrado!' });
   }
-  const novoUsuario = {
+  const novo = {
     id: Date.now(),
     nome,
     email,
     funcao,
     senha: await bcrypt.hash(senha, 10),
-    resetToken: null,
-    resetExpires: null
   };
-  usuarios.push(novoUsuario);
+  usuarios.push(novo);
   salvarUsuarios(usuarios);
   res.status(201).json({ mensagem: 'Usuário registrado com sucesso!' });
 });
 
-// ESQUECI SENHA
-router.post('/esqueci-senha', async (req, res) => {
+// ========== ESQUECI SENHA ==========
+router.post('/esqueci-senha', (req, res) => {
   const { email } = req.body;
-  if (!email) return res.status(400).json({ mensagem: 'E-mail é obrigatório!' });
+  if (!email) return res.status(400).json({ mensagem: 'E-mail é obrigatório.' });
+
   const usuarios = lerUsuarios();
   const usuario = usuarios.find(u => u.email === email);
-  if (!usuario) return res.status(404).json({ mensagem: 'E-mail não cadastrado!' });
-  const recoveryToken = jwt.sign({ id: usuario.id }, SECRET, { expiresIn: '1h' });
-  usuario.resetToken = recoveryToken;
-  usuario.resetExpires = Date.now() + RECOVERY_EXPIRATION_MS;
-  salvarUsuarios(usuarios);
-  // TODO: enviar e-mail real
-  res.json({ mensagem: 'Token de recuperação gerado.', token: recoveryToken });
+  if (!usuario) return res.status(404).json({ mensagem: 'E-mail não cadastrado.' });
+
+  // gera token simples (pode ser um código numérico)
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  const tokens = lerTokens();
+  tokens[code] = email;
+  salvarTokens(tokens);
+
+  // TODO: aqui você integraria com um serviço de e-mail
+  console.log(`🔐 Código de recuperação para ${email}: ${code}`);
+
+  res.json({ mensagem: 'Código de recuperação enviado por e-mail (ver logs).' });
 });
 
-// RESETAR SENHA
+// ========== REDIFINIR SENHA ==========
 router.post('/resetar-senha', async (req, res) => {
-  const { token, novaSenha } = req.body;
-  if (!token || !novaSenha) return res.status(400).json({ mensagem: 'Token e nova senha são obrigatórios!' });
-  try {
-    const payload = jwt.verify(token, SECRET);
-    const usuarios = lerUsuarios();
-    const usuario = usuarios.find(u => u.id === payload.id && u.resetToken === token);
-    if (!usuario || usuario.resetExpires < Date.now()) {
-      return res.status(400).json({ mensagem: 'Token inválido ou expirado!' });
-    }
-    usuario.senha = await bcrypt.hash(novaSenha, 10);
-    usuario.resetToken = null;
-    usuario.resetExpires = null;
-    salvarUsuarios(usuarios);
-    res.json({ mensagem: 'Senha atualizada com sucesso!' });
-  } catch {
-    res.status(400).json({ mensagem: 'Token inválido ou expirado!' });
+  const { token: code, novaSenha } = req.body;
+  if (!code || !novaSenha) {
+    return res.status(400).json({ mensagem: 'Código e nova senha são obrigatórios.' });
   }
+
+  const tokens = lerTokens();
+  const email = tokens[code];
+  if (!email) {
+    return res.status(400).json({ mensagem: 'Código inválido ou expirado.' });
+  }
+
+  // atualiza senha do usuário
+  const usuarios = lerUsuarios();
+  const idx = usuarios.findIndex(u => u.email === email);
+  if (idx === -1) {
+    return res.status(404).json({ mensagem: 'Usuário não encontrado.' });
+  }
+  usuarios[idx].senha = await bcrypt.hash(novaSenha, 10);
+  salvarUsuarios(usuarios);
+
+  // remove o token usado
+  delete tokens[code];
+  salvarTokens(tokens);
+
+  res.json({ mensagem: 'Senha redefinida com sucesso!' });
 });
-
-// VALIDAÇÃO DE TOKEN
-router.get('/validate', authMiddleware, (req, res) => {
-  res.json({ valid: true, usuario: req.user });
-});
-
-// ROTA DE TESTE
-router.get('/testar-usuarios', (_req, res) => {
-  const usuarios = lerUsuarios().map(u => ({ id: u.id, nome: u.nome, email: u.email, funcao: u.funcao }));
-  res.json(usuarios);
-});
-
-module.exports = router;
-
 
 module.exports = router;
