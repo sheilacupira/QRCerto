@@ -1,15 +1,16 @@
 // authController.js
-const express = require('express');
-const fs      = require('fs');
-const path    = require('path');
-const bcrypt  = require('bcrypt');
-const jwt     = require('jsonwebtoken');
+const express   = require('express');
+const fs        = require('fs');
+const path      = require('path');
+const bcrypt    = require('bcrypt');
+const jwt       = require('jsonwebtoken');
+const nodemailer = require('nodemailer');
 
 require('dotenv').config();
 
-const usuariosPath    = path.join(__dirname, 'usuarios.json');
-const tokensPath      = path.join(__dirname, 'resetTokens.json');
-const SECRET          = process.env.JWT_SECRET || 'chave-padrao';
+const usuariosPath = path.join(__dirname, 'usuarios.json');
+const tokensPath   = path.join(__dirname, 'resetTokens.json');
+const SECRET       = process.env.JWT_SECRET || 'chave-padrao';
 
 // --- Helpers para usuários ---
 function lerUsuarios() {
@@ -29,8 +30,20 @@ function salvarTokens(tokens) {
   fs.writeFileSync(tokensPath, JSON.stringify(tokens, null, 2), 'utf8');
 }
 
+// configura o transporter do nodemailer
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT || 587),
+  secure: process.env.SMTP_SECURE === 'true', // true p/ 465, false p/ outras
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  }
+});
+
+const router = express.Router();
+
 // ========== LOGIN ==========
-router = express.Router();
 router.post('/login', async (req, res) => {
   const { email, senha } = req.body;
   const usuarios = lerUsuarios();
@@ -74,7 +87,7 @@ router.post('/registro', async (req, res) => {
 });
 
 // ========== ESQUECI SENHA ==========
-router.post('/esqueci-senha', (req, res) => {
+router.post('/esqueci-senha', async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ mensagem: 'E-mail é obrigatório.' });
 
@@ -82,17 +95,38 @@ router.post('/esqueci-senha', (req, res) => {
   const usuario = usuarios.find(u => u.email === email);
   if (!usuario) return res.status(404).json({ mensagem: 'E-mail não cadastrado.' });
 
-  // gera token simples (pode ser um código numérico)
+  // gera token simples (código numérico)
   const code = Math.floor(100000 + Math.random() * 900000).toString();
   const tokens = lerTokens();
   tokens[code] = email;
   salvarTokens(tokens);
 
-  // TODO: aqui você integraria com um serviço de e-mail
-  console.log(`🔐 Código de recuperação para ${email}: ${code}`);
+  // envia e-mail com o código
+  try {
+    await transporter.sendMail({
+      from: `"QR Certo" <${process.env.SMTP_FROM}>`,
+      to: email,
+      subject: 'Código de recuperação de senha',
+      text: `Olá ${usuario.nome},\n\n` +
+            `Seu código de recuperação de senha é: ${code}\n\n` +
+            `Se você não solicitou essa mudança, apenas ignore esta mensagem.`,
+    });
+  } catch (err) {
+    console.error('Erro ao enviar e-mail de recuperação:', err);
+    return res.status(500).json({ mensagem: 'Falha ao enviar e-mail de recuperação.' });
+  }
 
-  res.json({ mensagem: 'Código de recuperação enviado por e-mail (ver logs).' });
+  res.json({ mensagem: 'Código de recuperação enviado por e-mail.' });
 });
+   // após criar o transporter…
+   transporter.verify((err, success) => {
+     if (err) {
+        console.error('❌ SMTP verification failed:', err);
+     } else {
+     console.log('✅ SMTP ready to send messages');
+     }
+  });
+
 
 // ========== REDIFINIR SENHA ==========
 router.post('/resetar-senha', async (req, res) => {
