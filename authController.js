@@ -8,7 +8,7 @@ const nodemailer = require('nodemailer');
 require('dotenv').config();
 
 const usuariosPath = path.join(__dirname, 'usuarios.json');
-const SECRET = 'chave-secreta-do-token';
+const SECRET = process.env.JWT_SECRET || 'chave-super-secreta-qrcerto';
 
 // ========== UTILITÁRIOS ==========
 const lerUsuarios = () => {
