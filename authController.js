@@ -1,18 +1,20 @@
 // authController.js
-const express   = require('express');
-const fs        = require('fs');
-const path      = require('path');
-const bcrypt    = require('bcrypt');
-const jwt       = require('jsonwebtoken');
+const express = require('express');
+const fs = require('fs');
+const path = require('path');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
-
+const authMiddleware = require('./authMiddleware');
 require('dotenv').config();
 
-const usuariosPath = path.join(__dirname, 'usuarios.json');
-const tokensPath   = path.join(__dirname, 'resetTokens.json');
-const SECRET       = process.env.JWT_SECRET || 'chave-padrao';
+const router = express.Router();
 
-// --- Helpers para usuários ---
+const usuariosPath = path.join(__dirname, 'usuarios.json');
+const tokensPath = path.join(__dirname, 'resetTokens.json');
+const SECRET = process.env.JWT_SECRET || 'chave-padrao';
+
+// === Helpers ===
 function lerUsuarios() {
   if (!fs.existsSync(usuariosPath)) return [];
   return JSON.parse(fs.readFileSync(usuariosPath, 'utf8'));
@@ -20,8 +22,6 @@ function lerUsuarios() {
 function salvarUsuarios(usuarios) {
   fs.writeFileSync(usuariosPath, JSON.stringify(usuarios, null, 2), 'utf8');
 }
-
-// --- Helpers para reset tokens ---
 function lerTokens() {
   if (!fs.existsSync(tokensPath)) return {};
   return JSON.parse(fs.readFileSync(tokensPath, 'utf8'));
@@ -30,63 +30,79 @@ function salvarTokens(tokens) {
   fs.writeFileSync(tokensPath, JSON.stringify(tokens, null, 2), 'utf8');
 }
 
-// configura o transporter do nodemailer
+// === Nodemailer ===
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: Number(process.env.SMTP_PORT || 587),
-  secure: process.env.SMTP_SECURE === 'true', // true p/ 465, false p/ outras
+  secure: process.env.SMTP_SECURE === 'true',
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
+  },
+});
+
+transporter.verify((err, success) => {
+  if (err) {
+    console.error('❌ Erro ao verificar SMTP:', err);
+  } else {
+    console.log('✅ SMTP pronto para envio de mensagens');
   }
 });
 
-const router = express.Router();
-
-// ========== LOGIN ==========
+// === ROTA: Login ===
 router.post('/login', async (req, res) => {
   const { email, senha } = req.body;
   const usuarios = lerUsuarios();
   const usuario = usuarios.find(u => u.email === email);
   if (!usuario) return res.status(401).json({ mensagem: 'E-mail ou senha inválidos!' });
 
-  const ok = await bcrypt.compare(senha, usuario.senha);
-  if (!ok) return res.status(401).json({ mensagem: 'E-mail ou senha inválidos!' });
+  const senhaCorreta = await bcrypt.compare(senha, usuario.senha);
+  if (!senhaCorreta) return res.status(401).json({ mensagem: 'E-mail ou senha inválidos!' });
 
   const token = jwt.sign(
     { id: usuario.id, nome: usuario.nome, funcao: usuario.funcao },
     SECRET,
     { expiresIn: '1d' }
   );
+
   res.json({
     token,
-    usuario: { id: usuario.id, nome: usuario.nome, email: usuario.email, funcao: usuario.funcao }
+    usuario: {
+      id: usuario.id,
+      nome: usuario.nome,
+      email: usuario.email,
+      funcao: usuario.funcao
+    }
   });
 });
 
-// ========== REGISTRO ==========
+// === ROTA: Registro ===
 router.post('/registro', async (req, res) => {
   const { nome, email, senha, funcao } = req.body;
   if (!nome || !email || !senha || !funcao) {
     return res.status(400).json({ mensagem: 'Todos os campos são obrigatórios!' });
   }
+
   const usuarios = lerUsuarios();
   if (usuarios.find(u => u.email === email)) {
     return res.status(409).json({ mensagem: 'E-mail já cadastrado!' });
   }
-  const novo = {
+
+  const novoUsuario = {
     id: Date.now(),
     nome,
     email,
     funcao,
     senha: await bcrypt.hash(senha, 10),
   };
-  usuarios.push(novo);
+
+  usuarios.push(novoUsuario);
   salvarUsuarios(usuarios);
+
   res.status(201).json({ mensagem: 'Usuário registrado com sucesso!' });
 });
 
-// ========== ESQUECI SENHA ==========
+// === ROTA: Esqueci a Senha ===
 router.post('/esqueci-senha', async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ mensagem: 'E-mail é obrigatório.' });
@@ -95,40 +111,27 @@ router.post('/esqueci-senha', async (req, res) => {
   const usuario = usuarios.find(u => u.email === email);
   if (!usuario) return res.status(404).json({ mensagem: 'E-mail não cadastrado.' });
 
-  // gera token simples (código numérico)
   const code = Math.floor(100000 + Math.random() * 900000).toString();
   const tokens = lerTokens();
   tokens[code] = email;
   salvarTokens(tokens);
 
-  // envia e-mail com o código
   try {
     await transporter.sendMail({
       from: `"QR Certo" <${process.env.SMTP_FROM}>`,
       to: email,
       subject: 'Código de recuperação de senha',
-      text: `Olá ${usuario.nome},\n\n` +
-            `Seu código de recuperação de senha é: ${code}\n\n` +
-            `Se você não solicitou essa mudança, apenas ignore esta mensagem.`,
+      text: `Olá ${usuario.nome},\n\nSeu código de recuperação de senha é: ${code}\n\nSe você não solicitou, ignore esta mensagem.`,
     });
   } catch (err) {
-    console.error('Erro ao enviar e-mail de recuperação:', err);
-    return res.status(500).json({ mensagem: 'Falha ao enviar e-mail de recuperação.' });
+    console.error('Erro ao enviar e-mail:', err);
+    return res.status(500).json({ mensagem: 'Erro ao enviar o e-mail.' });
   }
 
-  res.json({ mensagem: 'Código de recuperação enviado por e-mail.' });
+  res.json({ mensagem: 'Código enviado por e-mail.' });
 });
-   // após criar o transporter…
-   transporter.verify((err, success) => {
-     if (err) {
-        console.error('❌ SMTP verification failed:', err);
-     } else {
-     console.log('✅ SMTP ready to send messages');
-     }
-  });
 
-
-// ========== REDIFINIR SENHA ==========
+// === ROTA: Redefinir Senha ===
 router.post('/resetar-senha', async (req, res) => {
   const { token: code, novaSenha } = req.body;
   if (!code || !novaSenha) {
@@ -137,24 +140,37 @@ router.post('/resetar-senha', async (req, res) => {
 
   const tokens = lerTokens();
   const email = tokens[code];
-  if (!email) {
-    return res.status(400).json({ mensagem: 'Código inválido ou expirado.' });
-  }
+  if (!email) return res.status(400).json({ mensagem: 'Código inválido ou expirado.' });
 
-  // atualiza senha do usuário
   const usuarios = lerUsuarios();
   const idx = usuarios.findIndex(u => u.email === email);
-  if (idx === -1) {
-    return res.status(404).json({ mensagem: 'Usuário não encontrado.' });
-  }
+  if (idx === -1) return res.status(404).json({ mensagem: 'Usuário não encontrado.' });
+
   usuarios[idx].senha = await bcrypt.hash(novaSenha, 10);
   salvarUsuarios(usuarios);
 
-  // remove o token usado
   delete tokens[code];
   salvarTokens(tokens);
 
   res.json({ mensagem: 'Senha redefinida com sucesso!' });
 });
 
+// === ROTA: Dados do Usuário Logado ===
+router.get('/me', authMiddleware, (req, res) => {
+  const usuarios = lerUsuarios();
+  const usuario = usuarios.find(u => u.id === req.usuario.id);
+
+  if (!usuario) {
+    return res.status(404).json({ erro: 'Usuário não encontrado.' });
+  }
+
+  res.json({
+    id: usuario.id,
+    nome: usuario.nome,
+    email: usuario.email,
+    funcao: usuario.funcao
+  });
+});
+
+// === Exporta o router ===
 module.exports = router;
