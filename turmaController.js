@@ -48,7 +48,7 @@ router.post('/', (req, res) => {
 router.put('/:id', (req, res) => {
   const { id } = req.params;
   const { escola, serie, municipio, disciplina, professorEmail, alunos } = req.body;
-  if (!escola || !serie || !municipio || !disciplina || !professorEmail || !Array.isArray(alunos) || alunos.length === 0) {
+  if (!escola || !serie || !municipio || !disciplina || !professorEmail || !Array.isArray(alunos) ) {
     return res.status(400).json({ mensagem: 'Dados incompletos.' });
   }
   try {
