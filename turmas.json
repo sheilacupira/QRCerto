@@ -5,6 +5,7 @@
     "serie": "7º ano",
     "turma": "B",
     "disciplina": "Português",
+    "professorEmail": "maria@escola.com",
     "alunos": [
       "João",
       "Maria",
@@ -17,6 +18,7 @@
     "serie": "9 ano",
     "turma": "Única ",
     "disciplina": "Português ",
+    "professorEmail": "sheilacupira@gmail.com",
     "alunos": [
       "Leonardo ",
       "Maria Eduarda "
@@ -28,6 +30,7 @@
     "serie": "8 ano ",
     "turma": "A",
     "disciplina": "Português ",
+    "professorEmail": "sheilacupira@gmail.com",
     "alunos": [
       "Kauanny ",
       "Lucas",
